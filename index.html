@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>License Manager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Gotu&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #f0f4f8;
+            color: #1e293b;
+            min-height: 100vh;
+        }
+
+        /* ── Header ── */
+        header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+            color: white;
+            padding: 2.5rem 2rem 2rem;
+            text-align: center;
+        }
+        header h1 {
+            font-size: 1.85rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.4rem;
+        }
+        header p { opacity: 0.82; font-size: 0.95rem; }
+
+        /* ── Stats ── */
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            padding: 1.4rem 2rem;
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            flex-wrap: wrap;
+        }
+        .stat { text-align: center; }
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #2563eb;
+            line-height: 1;
+        }
+        .stat-value.green  { color: #059669; }
+        .stat-value.purple { color: #7c3aed; }
+        .stat-label {
+            font-size: 0.72rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-top: 3px;
+        }
+
+        /* ── Filters ── */
+        .filters {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            padding: 1.25rem 1rem 0.5rem;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            padding: 0.45rem 1.2rem;
+            border-radius: 2rem;
+            border: 2px solid #e2e8f0;
+            background: white;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #475569;
+            transition: all 0.18s;
+        }
+        .filter-btn:hover { border-color: #2563eb; color: #2563eb; }
+        .filter-btn.active          { background: #2563eb; color: white; border-color: #2563eb; }
+        .filter-btn.f-licensed.active { background: #059669; border-color: #059669; }
+        .filter-btn.f-ai.active     { background: #7c3aed; border-color: #7c3aed; }
+
+        /* ── Grid ── */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+            gap: 1.4rem;
+            padding: 1.5rem 2rem 3rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* ── Card ── */
+        .card {
+            background: white;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.07), 0 4px 14px rgba(0,0,0,0.06);
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.13), 0 10px 28px rgba(0,0,0,0.07);
+        }
+
+        .card-img-wrap {
+            position: relative;
+            height: 195px;
+            overflow: hidden;
+            background: #f1f5f9;
+        }
+        .card-img-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.3s;
+        }
+        .card:hover .card-img-wrap img { transform: scale(1.04); }
+
+        .folder-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.55);
+            color: white;
+            border-radius: 6px;
+            padding: 3px 9px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            backdrop-filter: blur(4px);
+        }
+        .status-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            border-radius: 6px;
+            padding: 3px 9px;
+            font-size: 0.68rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+        }
+        .status-badge.licensed { background: #dcfce7; color: #166534; }
+        .status-badge.ai       { background: #ede9fe; color: #5b21b6; }
+
+        .card-body {
+            padding: 0.9rem 1rem 0.5rem;
+            flex: 1;
+        }
+        .card-title {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #334155;
+            line-height: 1.45;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .card-footer { padding: 0 1rem 1rem; }
+
+        .card-actions { display: flex; gap: 8px; }
+
+        .btn-download {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            flex: 1;
+            padding: 0.58rem 0.6rem;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.18s, transform 0.1s;
+        }
+        .btn-download:hover  { background: #1d4ed8; }
+        .btn-download:active { transform: scale(0.98); }
+
+        .btn-img {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            flex: 1;
+            padding: 0.58rem 0.6rem;
+            background: #f8fafc;
+            color: #475569;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.18s, border-color 0.18s, transform 0.1s;
+        }
+        .btn-img:hover  { background: #f1f5f9; border-color: #cbd5e1; }
+        .btn-img:active { transform: scale(0.98); }
+
+        .ai-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+            padding: 0.58rem 0.75rem;
+            background: #f5f3ff;
+            color: #6d28d9;
+            border: 1.5px solid #ddd6fe;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #94a3b8;
+            grid-column: 1 / -1;
+            font-size: 1rem;
+        }
+        .no-results code {
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        footer {
+            text-align: center;
+            padding: 1.4rem;
+            font-size: 0.78rem;
+            color: #94a3b8;
+            border-top: 1px solid #e2e8f0;
+            background: white;
+        }
+
+        /* ── Tabs ── */
+        .tabs-nav {
+            display: flex;
+            justify-content: center;
+            gap: 0;
+            background: white;
+            border-bottom: 2px solid #e2e8f0;
+            padding: 0 2rem;
+        }
+        .tab-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 1rem 1.75rem;
+            border: none;
+            background: none;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #64748b;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: color 0.18s, border-color 0.18s;
+            letter-spacing: 0.01em;
+        }
+        .tab-btn:hover { color: #2563eb; }
+        .tab-btn.active { color: #2563eb; border-bottom-color: #2563eb; }
+        .tab-btn svg { flex-shrink: 0; }
+
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* ── Fonts tab ── */
+        .fonts-page {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 2.5rem 2rem 4rem;
+        }
+        .fonts-section-title {
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 1.25rem;
+        }
+        .font-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .font-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.07), 0 4px 14px rgba(0,0,0,0.06);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .font-preview {
+            padding: 2.5rem 2rem 2rem;
+            border-bottom: 1px solid #f1f5f9;
+            position: relative;
+        }
+        .font-preview-label {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            background: #dbeafe;
+            color: #1d4ed8;
+            font-size: 0.65rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 3px 9px;
+            border-radius: 20px;
+        }
+        .font-preview-name {
+            font-size: 2.8rem;
+            line-height: 1.15;
+            color: #0f172a;
+            margin-bottom: 0.6rem;
+        }
+        .font-preview-sample {
+            font-size: 0.95rem;
+            color: #475569;
+            line-height: 1.6;
+        }
+        .font-gotu .font-preview-name,
+        .font-gotu .font-preview-sample   { font-family: 'Gotu', sans-serif; }
+        .font-montserrat .font-preview-name,
+        .font-montserrat .font-preview-sample { font-family: 'Montserrat', sans-serif; }
+
+        .font-meta {
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            flex: 1;
+        }
+        .font-meta-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        .font-meta-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .icon-blue   { background: #eff6ff; color: #2563eb; }
+        .icon-green  { background: #f0fdf4; color: #059669; }
+        .icon-purple { background: #f5f3ff; color: #7c3aed; }
+        .icon-amber  { background: #fffbeb; color: #d97706; }
+        .icon-orange { background: #fff7ed; color: #ea580c; }
+
+        .font-preview-label.commercial {
+            background: #fff7ed;
+            color: #c2410c;
+        }
+
+        .font-meta-text { display: flex; flex-direction: column; gap: 1px; }
+        .font-meta-key {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: #94a3b8;
+        }
+        .font-meta-val {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .font-card-footer {
+            padding: 0 1.5rem 1.25rem;
+        }
+        .btn-font-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            width: 100%;
+            padding: 0.65rem 1rem;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 9px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background 0.18s;
+        }
+        .btn-font-link:hover { background: #1d4ed8; }
+
+        .license-strip {
+            margin-top: 2.5rem;
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            padding: 1.5rem 1.75rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 1.25rem;
+        }
+        .license-strip-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: #f0fdf4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: #059669;
+        }
+        .license-strip-icon.orange {
+            background: #fff7ed;
+            color: #ea580c;
+        }
+        .license-strip-body { flex: 1; }
+        .license-strip-title {
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 0.3rem;
+        }
+        .license-strip-desc {
+            font-size: 0.82rem;
+            color: #64748b;
+            line-height: 1.55;
+        }
+        .license-strip-link {
+            display: inline-block;
+            margin-top: 0.6rem;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #2563eb;
+            text-decoration: none;
+        }
+        .license-strip-link:hover { text-decoration: underline; }
+
+        @media (max-width: 640px) {
+            header h1 { font-size: 1.4rem; }
+            .stats     { gap: 1.5rem; }
+            .grid      { padding: 1rem 1rem 2rem; gap: 1rem; }
+            .font-cards { grid-template-columns: 1fr; }
+            .fonts-page { padding: 1.5rem 1rem 3rem; }
+            .tab-btn { padding: 0.85rem 1rem; font-size: 0.82rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>License Manager</h1>
+    <p>All project assets with their license certificates</p>
+</header>
+
+<!-- Tab Navigation -->
+<nav class="tabs-nav">
+    <button class="tab-btn active" onclick="switchTab('images', this)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        Images
+    </button>
+    <button class="tab-btn" onclick="switchTab('fonts', this)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+        Fonts
+    </button>
+    <button class="tab-btn" onclick="switchTab('icons', this)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Icons
+    </button>
+</nav>
+
+<!-- Images Tab -->
+<div id="tab-images" class="tab-panel active">
+
+<div class="stats">
+    <div class="stat">
+        <div class="stat-value" id="totalCount">0</div>
+        <div class="stat-label">Total Images</div>
+    </div>
+    <div class="stat">
+        <div class="stat-value green" id="licensedCount">0</div>
+        <div class="stat-label">Licensed</div>
+    </div>
+    <div class="stat">
+        <div class="stat-value purple" id="aiCount">0</div>
+        <div class="stat-label">AI Generated</div>
+    </div>
+</div>
+
+<div class="filters">
+    <button class="filter-btn active"      onclick="setFilter('all', this)">All</button>
+    <button class="filter-btn f-licensed"  onclick="setFilter('licensed', this)">Licensed</button>
+    <button class="filter-btn f-ai"        onclick="setFilter('ai', this)">AI Generated</button>
+</div>
+
+<div class="grid" id="grid"></div>
+
+</div><!-- /tab-images -->
+
+<!-- Fonts Tab -->
+<div id="tab-fonts" class="tab-panel">
+    <div class="fonts-page">
+        <div class="fonts-section-title">Project Typefaces</div>
+
+        <div class="font-cards">
+
+            <!-- Gotu -->
+            <div class="font-card font-gotu">
+                <div class="font-preview">
+                    <span class="font-preview-label">Google Fonts</span>
+                    <div class="font-preview-name">Gotu</div>
+                    <div class="font-preview-sample">ABCDEFGHIJKLM<br>abcdefghijklm 0123456789</div>
+                </div>
+                <div class="font-meta">
+                    <div class="font-meta-row">
+                        <div class="font-meta-icon icon-blue">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        </div>
+                        <div class="font-meta-text">
+                            <span class="font-meta-key">Designer</span>
+                            <span class="font-meta-val">Satya Rajpurohit</span>
+                        </div>
+                    </div>
+                    <div class="font-meta-row">
+                        <div class="font-meta-icon icon-green">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        </div>
+                        <div class="font-meta-text">
+                            <span class="font-meta-key">License</span>
+                            <span class="font-meta-val">SIL Open Font License 1.1</span>
+                        </div>
+                    </div>
+                    <div class="font-meta-row">
+                        <div class="font-meta-icon icon-purple">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+                        </div>
+                        <div class="font-meta-text">
+                            <span class="font-meta-key">Style</span>
+                            <span class="font-meta-val">Regular (1 style)</span>
+                        </div>
+                    </div>
+                    <div class="font-meta-row">
+                        <div class="font-meta-icon icon-amber">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        </div>
+                        <div class="font-meta-text">
+                            <span class="font-meta-key">Usage</span>
+                            <span class="font-meta-val">Free for personal &amp; commercial use</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="font-card-footer">
+                    <a class="btn-font-link" href="https://fonts.google.com/specimen/Gotu" target="_blank" rel="noopener">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                        View on Google Fonts
+                    </a>
+                </div>
+            </div>
+
+            <!-- Montserrat -->
+            <div class="font-card font-montserrat">
+                <div class="font-preview">
+                    <span class="font-preview-label">Google Fonts</span>
+                    <div class="font-preview-name">Montserrat</div>
+                    <div class="font-preview-sample">ABCDEFGHIJKLM<br>abcdefghijklm 0123456789</div>
+                </div>
+                <div class="font-meta">
+                    <div class="font-meta-row">
+                        <div class="font-meta-icon icon-blue">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        </div>
+                        <div class="font-meta-text">
+                            <span class="font-meta-key">Designer</span>
+                            <span class="font-meta-val">Julieta Ulanovsky</span>
+                        </div>
+                    </div>
+                    <div class="font-meta-row">
+                        <div class="font-meta-icon icon-green">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        </div>
+                        <div class="font-meta-text">
+                            <span class="font-meta-key">License</span>
+                            <span class="font-meta-val">SIL Open Font License 1.1</span>
+                        </div>
+                    </div>
+                    <div class="font-meta-row">
+                        <div class="font-meta-icon icon-purple">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+                        </div>
+                        <div class="font-meta-text">
+                            <span class="font-meta-key">Styles</span>
+                            <span class="font-meta-val">18 styles (Thin–Black, Italic)</span>
+                        </div>
+                    </div>
+                    <div class="font-meta-row">
+                        <div class="font-meta-icon icon-amber">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        </div>
+                        <div class="font-meta-text">
+                            <span class="font-meta-key">Usage</span>
+                            <span class="font-meta-val">Free for personal &amp; commercial use</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="font-card-footer">
+                    <a class="btn-font-link" href="https://fonts.google.com/specimen/Montserrat" target="_blank" rel="noopener">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                        View on Google Fonts
+                    </a>
+                </div>
+            </div>
+
+        </div><!-- /font-cards -->
+
+        <!-- OFL License note -->
+        <div class="license-strip">
+            <div class="license-strip-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div class="license-strip-body">
+                <div class="license-strip-title">SIL Open Font License 1.1 (OFL)</div>
+                <div class="license-strip-desc">Both fonts are distributed under the SIL Open Font License, which grants permission to use, study, modify and redistribute the fonts freely — including in commercial products and projects — as long as the fonts are not sold by themselves.</div>
+                <a class="license-strip-link" href="https://openfontlicense.org" target="_blank" rel="noopener">Read full OFL license &rarr;</a>
+            </div>
+        </div>
+
+    </div>
+</div><!-- /tab-fonts -->
+
+<!-- Icons Tab -->
+<div id="tab-icons" class="tab-panel">
+    <div class="fonts-page">
+        <div class="fonts-section-title">Project Icon Libraries</div>
+
+        <div class="font-cards">
+
+            <!-- Font Awesome Pro Plus -->
+            <div class="font-card">
+                <div class="font-preview" style="background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);">
+                    <span class="font-preview-label commercial">Commercial License</span>
+                    <div style="display:flex; align-items:center; gap:1rem; margin-bottom:0.6rem;">
+                        <svg width="48" height="48" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="100" height="100" rx="22" fill="#ea580c"/>
+                            <path d="M50 18L58.5 38H80L63 51L69.5 72L50 59.5L30.5 72L37 51L20 38H41.5L50 18Z" fill="white"/>
+                        </svg>
+                        <div>
+                            <div class="font-preview-name" style="font-size:1.9rem;">Font Awesome</div>
+                            <div style="font-size:0.8rem; font-weight:700; color:#9a3412; letter-spacing:0.05em; text-transform:uppercase;">Pro Plus — v7.3.0</div>
+                        </div>
+                    </div>
+                    <div class="font-preview-sample" style="font-size:0.85rem; color:#7c2d12;">Icon library — used for all UI icons across the project</div>
+                </div>
+                <div class="font-meta">
+                    <div class="font-meta-row">
+                        <div class="font-meta-icon icon-blue">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        </div>
+                        <div class="font-meta-text">
+                            <span class="font-meta-key">Publisher</span>
+                            <span class="font-meta-val">Fonticons, Inc.</span>
+                        </div>
+                    </div>
+                    <div class="font-meta-row">
+                        <div class="font-meta-icon icon-orange">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                        </div>
+                        <div class="font-meta-text">
+                            <span class="font-meta-key">License</span>
+                            <span class="font-meta-val">Font Awesome Pro Commercial License</span>
+                        </div>
+                    </div>
+                    <div class="font-meta-row">
+                        <div class="font-meta-icon icon-purple">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        </div>
+                        <div class="font-meta-text">
+                            <span class="font-meta-key">Version</span>
+                            <span class="font-meta-val">7.3.0 (Pro Plus)</span>
+                        </div>
+                    </div>
+                    <div class="font-meta-row">
+                        <div class="font-meta-icon icon-green">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <div class="font-meta-text">
+                            <span class="font-meta-key">Attribution</span>
+                            <span class="font-meta-val">Not required by the commercial license</span>
+                        </div>
+                    </div>
+                    <div class="font-meta-row">
+                        <div class="font-meta-icon icon-amber">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        </div>
+                        <div class="font-meta-text">
+                            <span class="font-meta-key">Usage</span>
+                            <span class="font-meta-val">Commercial use — paid license owned</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="font-card-footer" style="display:flex; gap:8px;">
+                    <a class="btn-font-link" href="Icons/fontawesome-pro-plus/LICENSE.txt" download style="background:#ea580c; flex:1;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        License File
+                    </a>
+                    <a class="btn-font-link" href="https://fontawesome.com/license" target="_blank" rel="noopener" style="background:#f97316; flex:1;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                        Full License
+                    </a>
+                </div>
+            </div>
+
+        </div><!-- /font-cards -->
+
+        <!-- Font Awesome Commercial License note -->
+        <div class="license-strip" style="margin-top:2.5rem;">
+            <div class="license-strip-icon orange">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+            </div>
+            <div class="license-strip-body">
+                <div class="license-strip-title">Font Awesome Pro Commercial License</div>
+                <div class="license-strip-desc">Font Awesome Pro is commercial software requiring a paid license. The commercial license permits use in essentially unlimited projects. Attribution is not required. Brand icons remain trademarks of their respective owners and may only be used to represent the entity they belong to.</div>
+                <a class="license-strip-link" href="https://fontawesome.com/license" target="_blank" rel="noopener" style="color:#ea580c;">Read full Font Awesome license &rarr;</a>
+            </div>
+        </div>
+
+    </div>
+</div><!-- /tab-icons -->
+
+<footer>License Manager &mdash; Images &amp; Fonts used in this project.</footer>
+
+<script src="manifest.js"></script>
+<script>
+    /* ── Tab switching ─────────────────────────────────────────────────── */
+    function switchTab(name, btn) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + name).classList.add('active');
+    }
+
+    /* ── Icons ─────────────────────────────────────────────────────────── */
+    const ICON_DOWNLOAD = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`;
+    const ICON_IMAGE    = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
+    const ICON_AI       = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`;
+
+    const FALLBACK_IMG  = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200'%3E%3Crect fill='%23f1f5f9' width='300' height='200'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='%2394a3b8' font-family='sans-serif' font-size='13' dy='.3em'%3EImage not found%3C/text%3E%3C/svg%3E`;
+    const IMG_EXTS      = ['.jpg','.jpeg','.png','.gif','.webp','.svg','.bmp'];
+
+    /* ── Helpers ────────────────────────────────────────────────────────── */
+    function cleanTitle(filename) {
+        const name = filename.replace(/\.[^.]+$/, '');
+        if (/^ai[-_]?generated$/i.test(name)) return 'AI Generated Image';
+        return name.replace(/[-_]+/g, ' ').replace(/\s+/g, ' ').trim()
+                   .replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    let allCards = [];
+
+    function render(data) {
+        const grid = document.getElementById('grid');
+        document.getElementById('totalCount').textContent    = data.length;
+        document.getElementById('licensedCount').textContent = data.filter(d => d.pdf).length;
+        document.getElementById('aiCount').textContent       = data.filter(d => !d.pdf).length;
+
+        if (!data.length) {
+            grid.innerHTML = `<div class="no-results">No image folders found inside <code>Images/</code>.</div>`;
+            return;
+        }
+
+        grid.innerHTML = data.map(item => {
+            const isAI    = !item.pdf;
+            const imgPath = `Images/${item.folder}/${item.image}`;
+            const pdfPath = item.pdf ? `Images/${item.folder}/${item.pdf}` : null;
+            const title   = cleanTitle(item.image);
+            return `
+            <div class="card" data-type="${isAI ? 'ai' : 'licensed'}">
+                <div class="card-img-wrap">
+                    <img src="${imgPath}" alt="${title}" loading="lazy"
+                         onerror="this.src='${FALLBACK_IMG}';this.style.objectFit='contain';">
+                    <span class="folder-badge">#${item.folder}</span>
+                    <span class="status-badge ${isAI ? 'ai' : 'licensed'}">${isAI ? 'AI Generated' : 'Licensed'}</span>
+                </div>
+                <div class="card-body"><div class="card-title">${title}</div></div>
+                <div class="card-footer">
+                    <div class="card-actions">
+                        <a class="btn-img" href="${imgPath}" download target="_blank" rel="noopener">${ICON_IMAGE} Image</a>
+                        ${isAI
+                            ? `<div class="ai-label" style="flex:2">${ICON_AI} AI Generated — No License</div>`
+                            : `<a class="btn-download" href="${pdfPath}" download target="_blank" rel="noopener" style="flex:2">${ICON_DOWNLOAD} License PDF</a>`
+                        }
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+
+        allCards = Array.from(grid.querySelectorAll('.card'));
+    }
+
+    function setFilter(type, btn) {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        allCards.forEach(card => {
+            card.style.display = (type === 'all' || card.dataset.type === type) ? '' : 'none';
+        });
+    }
+
+    /* ── GitHub Contents API ────────────────────────────────────────────── */
+    async function fetchFromGitHub(owner, repo) {
+        const base = `https://api.github.com/repos/${owner}/${repo}/contents/Images`;
+        const hdr  = { Accept: 'application/vnd.github.v3+json' };
+
+        const r = await fetch(base, { headers: hdr });
+        if (!r.ok) return null;
+
+        const folders = (await r.json())
+            .filter(f => f.type === 'dir')
+            .sort((a, b) => {
+                const na = parseInt(a.name), nb = parseInt(b.name);
+                return (isNaN(na) || isNaN(nb)) ? a.name.localeCompare(b.name) : na - nb;
+            });
+
+        const items = await Promise.all(folders.map(async folder => {
+            const fr = await fetch(`${base}/${folder.name}`, { headers: hdr });
+            if (!fr.ok) return null;
+            const files = await fr.json();
+            const img   = files.find(f => IMG_EXTS.some(e => f.name.toLowerCase().endsWith(e)));
+            const pdf   = files.find(f => f.name.toLowerCase().endsWith('.pdf'));
+            if (!img) return null;
+            return { folder: folder.name, image: img.name, pdf: pdf ? pdf.name : null };
+        }));
+
+        return items.filter(Boolean);
+    }
+
+    /* ── Bootstrap: GitHub API → manifest.js fallback ──────────────────── */
+    async function init() {
+        /* Auto-detect GitHub Pages URL: {username}.github.io/{repo}/... */
+        const host  = location.hostname;
+        const parts = location.pathname.split('/').filter(Boolean);
+
+        if (host.endsWith('.github.io') && parts.length >= 1) {
+            const owner = host.replace('.github.io', '');
+            const repo  = parts[0];
+            try {
+                const data = await fetchFromGitHub(owner, repo);
+                if (data) { render(data); return; }
+            } catch (_) { /* fall through to manifest */ }
+        }
+
+        /* Fallback: manifest.js (local preview) */
+        if (typeof window.IMAGES_MANIFEST !== 'undefined' && Array.isArray(window.IMAGES_MANIFEST)) {
+            render(window.IMAGES_MANIFEST);
+            return;
+        }
+
+        document.getElementById('grid').innerHTML = `<div class="no-results">
+            <strong>Could not load images.</strong><br><br>
+            On GitHub Pages this works automatically — just push your folders.<br>
+            For local preview, run <code>update-manifest.bat</code> once, then refresh.
+        </div>`;
+    }
+
+    init();
+</script>
+
+</body>
+</html>
